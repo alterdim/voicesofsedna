@@ -1,0 +1,13 @@
+{
+  "itemGroup.voicesofsedna": "Example Mod Tab",
+  "block.voicesofsedna.example_block": "Example Block",
+  "item.voicesofsedna.example_item": "Example Item",
+
+  "voicesofsedna.configuration.title": "Voices of Sedna Configs",
+  "voicesofsedna.configuration.section.voicesofsedna.common.toml": "Voices of Sedna Configs",
+  "voicesofsedna.configuration.section.voicesofsedna.common.toml.title": "Voices of Sedna Configs",
+  "voicesofsedna.configuration.items": "Item List",
+  "voicesofsedna.configuration.logDirtBlock": "Log Dirt Block",
+  "voicesofsedna.configuration.magicNumberIntroduction": "Magic Number Text",
+  "voicesofsedna.configuration.magicNumber": "Magic Number"
+}
