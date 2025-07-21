@@ -20,9 +20,10 @@ public class RadioScreenRenderer extends GeoBlockRenderer<RadioScreenBlockEntity
 
     public RadioScreenRenderer(BlockEntityRendererProvider.Context context) {
         super(new RadioScreenGeoModel());
-
         addRenderLayer(new RadioScreenRenderLayer(this));
     }
+
+
 
 }
 

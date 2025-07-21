@@ -2,13 +2,17 @@ package li.gerard.voicesofsedna.client.renderer.radio;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import li.gerard.voicesofsedna.block.radio.RadioScreenBlock;
 import li.gerard.voicesofsedna.blockentity.radio.RadioScreenBlockEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
-import software.bernie.geckolib.animatable.GeoAnimatable;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.constant.dataticket.DataTicket;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.base.GeoRenderState;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
@@ -25,7 +29,6 @@ public class RadioScreenRenderLayer extends GeoRenderLayer<RadioScreenBlockEntit
     @Override
     public void addRenderData(RadioScreenBlockEntity animatable, Void relatedObject, GeoRenderState renderState) {
         renderState.addGeckolibData(ENTITY_TICKET, animatable);
-        super.addRenderData(animatable, relatedObject, renderState);
     }
 
     @Override
@@ -33,38 +36,62 @@ public class RadioScreenRenderLayer extends GeoRenderLayer<RadioScreenBlockEntit
                        @Nullable RenderType renderType, MultiBufferSource bufferSource,
                        @Nullable VertexConsumer buffer, int packedLight, int packedOverlay, int renderColor) {
 
-        // If the block isn't visible, skip rendering bars
-        if (buffer == null) return;
-
         RadioScreenBlockEntity screen = renderState.getGeckolibData(ENTITY_TICKET);
+        BlockState state = screen.getBlockState();
+        Direction facing = state.getValue(RadioScreenBlock.FACING);
 
-        float[] bars = screen.getBarHeights();
+        float rotationY = switch (facing) {
+            case NORTH -> 180f;
+            case SOUTH -> 0f;
+            case WEST  -> 90f;
+            case EAST  -> -90f;
+            default -> 0f;
+        };
+
+        poseStack.translate(0.5, 0.5, 0.5); // center of block
+        poseStack.mulPose(Axis.YP.rotationDegrees(rotationY));
+        poseStack.translate(-0.5, -0.5, -0.5); // un-center
 
         poseStack.pushPose();
-        poseStack.translate(0.2f, 0.05f, 0.01f); // Position over the screen
+        poseStack.translate(0.2f, 0.4f, 0.01f); // adjust position
+        poseStack.scale(1.6f, 1.6f, 1f);        // adjust size
 
         Matrix4f mat = poseStack.last().pose();
-        VertexConsumer vc = bufferSource.getBuffer(RenderType.solid());
+        VertexConsumer vc = bufferSource.getBuffer(RenderType.entityTranslucent(ResourceLocation.fromNamespaceAndPath("minecraft", "textures/misc/white.png")));
 
-        for (int i = 0; i < bars.length; i++) {
-            float x = i * 0.03f;
-            float h = bars[i] * 0.3f + 0.05f;
-            renderBar(vc, mat, x, 0f, h, 0xFF00FF00); // Green
-        }
+
+        long time = screen.getLevel() != null ? screen.getLevel().getGameTime() : 0;
+
+        renderSineWave(vc, mat, 0xFF00FF00, time, packedLight, packedOverlay);
 
         poseStack.popPose();
     }
 
-    private void renderBar(VertexConsumer vc, Matrix4f mat, float x, float y, float height, int color) {
-        float w = 0.025f;
+    private void renderSineWave(VertexConsumer vc, Matrix4f mat, int color, long time, int light, int overlay) {
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
         float a = ((color >> 24) & 0xFF) / 255f;
 
-        vc.addVertex(mat, x, y, 0).setColor(r, g, b, a).setUv(0, 0).setUv2(0, 0).setNormal(0, 0, 1);
-        vc.addVertex(mat, x + w, y, 0).setColor(r, g, b, a).setUv(1, 0).setUv2(0, 0).setNormal(0, 0, 1);
-        vc.addVertex(mat, x + w, y + height, 0).setColor(r, g, b, a).setUv(1, 1).setUv2(0, 0).setNormal(0, 0, 1);
-        vc.addVertex(mat, x, y + height, 0).setColor(r, g, b, a).setUv(0, 1).setUv2(0, 0).setNormal(0, 0, 1);
+        float width = 0.6f;
+        float height = 0.3f;
+        int segments = 64;
+
+        float dx = width / segments;
+        float phase = (time % 40) / 40f * (float) Math.PI * 2;
+
+        for (int i = 0; i < segments - 1; i++) {
+            float x1 = i * dx;
+            float x2 = (i + 1) * dx;
+
+            float y1 = height / 2f + (float) Math.sin(i * 0.3f + phase) * (height / 2f);
+            float y2 = height / 2f + (float) Math.sin((i + 1) * 0.3f + phase) * (height / 2f);
+
+            int lightU = light & 0xFFFF;
+            int lightV = (light >> 16) & 0xFFFF;
+
+            vc.addVertex(mat, x1, y1, 0).setColor(r, g, b, a).setUv(0, 0).setUv1(0, 0).setUv2(lightU, lightV).setNormal(0, 0, 1);
+            vc.addVertex(mat, x2, y2, 0).setColor(r, g, b, a).setUv(1, 0).setUv1(0,0).setUv2(lightU, lightV).setNormal(0, 0, 1);
+        }
     }
 }

@@ -1,7 +1,9 @@
 package li.gerard.voicesofsedna.blockentity.radio;
 
+import li.gerard.voicesofsedna.block.radio.RadioScreenBlock;
 import li.gerard.voicesofsedna.blockentity.LinkableBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,6 +28,10 @@ public class RadioScreenBlockEntity extends LinkableBlockEntity implements GeoBl
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
 
+    }
+
+    public Direction getFacing() {
+        return getBlockState().getValue(RadioScreenBlock.FACING);
     }
 
     @Override
