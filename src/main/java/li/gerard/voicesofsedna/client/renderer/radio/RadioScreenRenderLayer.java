@@ -37,23 +37,9 @@ public class RadioScreenRenderLayer extends GeoRenderLayer<RadioScreenBlockEntit
                        @Nullable VertexConsumer buffer, int packedLight, int packedOverlay, int renderColor) {
 
         RadioScreenBlockEntity screen = renderState.getGeckolibData(ENTITY_TICKET);
-        BlockState state = screen.getBlockState();
-        Direction facing = state.getValue(RadioScreenBlock.FACING);
-
-        float rotationY = switch (facing) {
-            case NORTH -> 180f;
-            case SOUTH -> 0f;
-            case WEST  -> 90f;
-            case EAST  -> -90f;
-            default -> 0f;
-        };
-
-        poseStack.translate(0.5, 0.5, 0.5); // center of block
-        poseStack.mulPose(Axis.YP.rotationDegrees(rotationY));
-        poseStack.translate(-0.5, -0.5, -0.5); // un-center
 
         poseStack.pushPose();
-        poseStack.translate(0.2f, 0.4f, 0.01f); // adjust position
+        poseStack.translate(-0.5f, 0.3f, -0.35f); // adjust position
         poseStack.scale(1.6f, 1.6f, 1f);        // adjust size
 
         Matrix4f mat = poseStack.last().pose();
@@ -62,23 +48,25 @@ public class RadioScreenRenderLayer extends GeoRenderLayer<RadioScreenBlockEntit
 
         long time = screen.getLevel() != null ? screen.getLevel().getGameTime() : 0;
 
-        renderSineWave(vc, mat, 0xFF00FF00, time, packedLight, packedOverlay);
+        float height = screen.getSineWaveHeight();
+        float speed = screen.getSineWaveSpeed();
+
+        renderSineWave(vc, mat, 0xFF00FF00, time, packedLight, height, speed);
 
         poseStack.popPose();
     }
 
-    private void renderSineWave(VertexConsumer vc, Matrix4f mat, int color, long time, int light, int overlay) {
+    private void renderSineWave(VertexConsumer vc, Matrix4f mat, int color, long time, int light, float height, float speed) {
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
         float a = ((color >> 24) & 0xFF) / 255f;
 
         float width = 0.6f;
-        float height = 0.3f;
         int segments = 64;
 
         float dx = width / segments;
-        float phase = (time % 40) / 40f * (float) Math.PI * 2;
+        float phase = ((time * speed )% 40) / 40f * (float) Math.PI * 2;
 
         for (int i = 0; i < segments - 1; i++) {
             float x1 = i * dx;
@@ -90,8 +78,15 @@ public class RadioScreenRenderLayer extends GeoRenderLayer<RadioScreenBlockEntit
             int lightU = light & 0xFFFF;
             int lightV = (light >> 16) & 0xFFFF;
 
-            vc.addVertex(mat, x1, y1, 0).setColor(r, g, b, a).setUv(0, 0).setUv1(0, 0).setUv2(lightU, lightV).setNormal(0, 0, 1);
-            vc.addVertex(mat, x2, y2, 0).setColor(r, g, b, a).setUv(1, 0).setUv1(0,0).setUv2(lightU, lightV).setNormal(0, 0, 1);
+            float thickness = 0.01f; // Controls how thick the wave looks
+            int repeats = 5; // How many extra lines to draw
+
+            for (int o = -repeats; o <= repeats; o++) {
+                float offset = o * thickness;
+
+                vc.addVertex(mat, x1, y1 + offset, 0).setColor(r, g, b, a).setUv(0, 0).setUv1(0, 0).setUv2(lightU, lightV).setNormal(0, 0, 1);
+                vc.addVertex(mat, x2, y2 + offset, 0).setColor(r, g, b, a).setUv(1, 0).setUv1(0, 0).setUv2(lightU, lightV).setNormal(0, 0, 1);
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ import static li.gerard.voicesofsedna.blockentity.ModBlockEntities.RADIO_SCREEN_
 
 public class RadioScreenBlock extends Block implements EntityBlock {
 
-    public static final EnumProperty<Direction> FACING = EnumProperty.create("facing", Direction.class, Direction.Plane.HORIZONTAL);
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public RadioScreenBlock(Properties p_49795_) {
         super(p_49795_);
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
